@@ -17,7 +17,6 @@ class _OnboardState extends State<Onboard> {
   @override
   void initState() {
     _controller = PageController(initialPage: 0);
-
     super.initState();
   }
 
@@ -29,11 +28,18 @@ class _OnboardState extends State<Onboard> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+
+    bool isWeb = screenWidth > 800;
+
     return Scaffold(
-      body: Column(
-        children: [
-          Expanded(
-            child: PageView.builder(
+      body: SafeArea(
+        child: Column(
+          children: [
+            /// PageView
+            Expanded(
+              child: PageView.builder(
                 controller: _controller,
                 itemCount: contents.length,
                 onPageChanged: (int index) {
@@ -42,79 +48,133 @@ class _OnboardState extends State<Onboard> {
                   });
                 },
                 itemBuilder: (_, i) {
-                  return Padding(
-                    padding: EdgeInsets.only(top: 40.0, left: 20.0, right: 20.0),
-                    child: Column(
-                      children: [
-                        Image.asset(
-                          contents[i].image,
-                          height: 450,
-                          width: MediaQuery.of(context).size.width ,
-                          fit: BoxFit.fill,
+                  return SingleChildScrollView(
+                    child: Center(
+                      child: Container(
+                        width: isWeb ? 600 : screenWidth,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 20,
                         ),
-                        SizedBox(
-                          height: 40.0,
+                        child: Column(
+                          children: [
+                            /// Image
+                            Container(
+                              constraints: BoxConstraints(
+                                maxHeight:
+                                    isWeb ? 450 : screenHeight * 0.45,
+                              ),
+                              child: Image.asset(
+                                contents[i].image,
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            /// Title
+                            Text(
+                              contents[i].title,
+                              textAlign: TextAlign.center,
+                              style:
+                                  AppWidget.HeadlineTextFeildStyle(),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            /// Description
+                            Text(
+                              contents[i].description,
+                              textAlign: TextAlign.center,
+                              style:
+                                  AppWidget.LightTextFeildStyle(),
+                            ),
+
+                            const SizedBox(height: 20),
+                          ],
                         ),
-                        Text(
-                          contents[i].title,
-                          style: AppWidget.HeadlineTextFeildStyle(),
-                        ),
-                        SizedBox(
-                          height: 20.0,
-                        ),
-                        Text(
-                          contents[i].description,
-                          style: AppWidget.LightTextFeildStyle(),
-                        )
-                      ],
+                      ),
                     ),
                   );
-                }),
-          ),
-          Container(
-            child: Row(
+                },
+              ),
+            ),
+
+            /// Dots Indicator
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
                 contents.length,
-                (index) => buildDot(index, context),
+                (index) => buildDot(index),
               ),
             ),
-          ),
-          GestureDetector(
-            onTap: () {
-              if (currentIndex == contents.length - 1) {
-                Navigator.pushReplacement(
-                    context, MaterialPageRoute(builder: (context) => SignUp()));
-              }
-              _controller.nextPage(
-                  duration: Duration(milliseconds: 100),
-                  curve: Curves.bounceIn);
-            },
-            child: Container(
-              decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(20)),
-              height: 60,
-              margin: EdgeInsets.all(40),
-              width: double.infinity,
-              child: Center(
-                child: Text(
-                 currentIndex == contents.length - 1?"Start": "Next",
-                  style: TextStyle(color: Colors.white, fontSize: 20.0, fontWeight: FontWeight.bold),
+
+            const SizedBox(height: 20),
+
+            /// Next Button
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isWeb ? screenWidth * 0.3 : 20,
+                vertical: 20,
+              ),
+              child: GestureDetector(
+                onTap: () {
+                  if (currentIndex == contents.length - 1) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SignUp(),
+                      ),
+                    );
+                  } else {
+                    _controller.nextPage(
+                      duration:
+                          const Duration(milliseconds: 300),
+                      curve: Curves.easeIn,
+                    );
+                  }
+                },
+                child: Container(
+                  height: 60,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Center(
+                    child: Text(
+                      currentIndex == contents.length - 1
+                          ? "Start"
+                          : "Next",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-          )
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Container buildDot(int index, BuildContext context) {
-    return Container(
+  Widget buildDot(int index) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       height: 10.0,
-      width: currentIndex == index ? 18 : 7,
-      margin: EdgeInsets.only(right: 5),
+      width: currentIndex == index ? 20 : 8,
+      margin: const EdgeInsets.only(right: 5),
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(6), color: Colors.black38),
+        borderRadius: BorderRadius.circular(6),
+        color: currentIndex == index
+            ? Colors.red
+            : Colors.black38,
+      ),
     );
   }
 }
