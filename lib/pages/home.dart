@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:food_delivery_app/pages/cart.dart';
 import 'package:food_delivery_app/pages/details.dart';
 import 'package:food_delivery_app/widget/widget_support.dart';
 
@@ -10,161 +12,279 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  bool icecream = false,
-      pizza = false,
-      salad = false,
-      burger = false;
+  /// NULL = SHOW ALL ITEMS
+  String? selectedCategory;
+
+  /// CATEGORY ICONS
+  final List<Map<String, dynamic>> categories = [
+    {
+      "name": "Ice-cream",
+      "image": "images/ice-cream.png",
+    },
+    {
+      "name": "Pizza",
+      "image": "images/pizza.png",
+    },
+    {
+      "name": "Salad",
+      "image": "images/salad.png",
+    },
+    {
+      "name": "Burger",
+      "image": "images/burger.png",
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
+    double screenWidth =
+        MediaQuery.of(context).size.width;
 
-    bool isWeb = screenWidth > 800;
+    bool isDesktop = screenWidth > 1000;
+    bool isTablet = screenWidth > 700;
 
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 20,
-          ),
+          padding: const EdgeInsets.all(20),
+
           child: Center(
             child: Container(
-              width: isWeb ? 1200 : screenWidth,
+              width: isDesktop
+                  ? 1300
+                  : isTablet
+                      ? 900
+                      : double.infinity,
+
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+
                 children: [
-                  /// Header
+                  /// HEADER
                   Row(
                     mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                        MainAxisAlignment
+                            .spaceBetween,
+
                     children: [
-                      Text(
-                        "Hello Sharayu,",
-                        style:
-                            AppWidget.boldTextFeildStyle(),
+                      Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment
+                                .start,
+
+                        children: [
+                          Text(
+                            "Hello Sharayu,",
+                            style: AppWidget
+                                .boldTextFeildStyle(),
+                          ),
+
+                          SizedBox(height: 5),
+
+                          Text(
+                            "Delicious food awaits",
+                            style: AppWidget
+                                .LightTextFeildStyle(),
+                          ),
+                        ],
                       ),
 
-                      /// Cart
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius:
-                              BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.shopping_cart_outlined,
-                          color: Colors.white,
+                      /// CART BUTTON
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  CartPage(),
+                            ),
+                          );
+                        },
+
+                        child: Container(
+                          padding:
+                              EdgeInsets.all(10),
+
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                                        12),
+                          ),
+
+                          child: Icon(
+                            Icons
+                                .shopping_cart_outlined,
+                            color: Colors.white,
+                          ),
                         ),
                       )
                     ],
                   ),
 
-                  const SizedBox(height: 20),
+                  SizedBox(height: 30),
 
-                  /// Title
+                  /// TITLE
                   Text(
                     "Delicious Food",
-                    style:
-                        AppWidget.HeadlineTextFeildStyle(),
+                    style: AppWidget
+                        .HeadlineTextFeildStyle(),
                   ),
 
-                  const SizedBox(height: 5),
+                  SizedBox(height: 5),
 
                   Text(
-                    "Discover and Get Great Food",
-                    style:
-                        AppWidget.LightTextFeildStyle(),
+                    selectedCategory == null
+                        ? "All Food Items"
+                        : selectedCategory!,
+                    style: AppWidget
+                        .LightTextFeildStyle(),
                   ),
 
-                  const SizedBox(height: 25),
+                  SizedBox(height: 30),
 
-                  /// Categories
-                  showItem(),
+                  /// CATEGORY BUTTONS
+                  categorySection(),
 
-                  const SizedBox(height: 30),
+                  SizedBox(height: 35),
 
-                  /// Top Food Cards
-                  SizedBox(
-                    height: 290,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        foodCard(
-                          image: "images/salad2.png",
-                          title: "Veggie Taco Hash",
-                          subtitle: "Fresh and Healthy",
-                          price: "\$25",
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const Details(),
+                  /// FOOD STREAM
+                  StreamBuilder<QuerySnapshot>(
+                    stream:
+                        selectedCategory == null
+                            ? FirebaseFirestore
+                                .instance
+                                .collection(
+                                    "foodItems")
+                                .snapshots()
+
+                            : FirebaseFirestore
+                                .instance
+                                .collection(
+                                    "foodItems")
+                                .where(
+                                  "category",
+                                  isEqualTo:
+                                      selectedCategory,
+                                )
+                                .snapshots(),
+
+                    builder:
+                        (context, snapshot) {
+                      if (snapshot
+                              .connectionState ==
+                          ConnectionState
+                              .waiting) {
+                        return Center(
+                          child:
+                              CircularProgressIndicator(),
+                        );
+                      }
+
+                      if (!snapshot.hasData ||
+                          snapshot
+                              .data!.docs.isEmpty) {
+                        return Center(
+                          child: Padding(
+                            padding:
+                                const EdgeInsets
+                                    .all(30),
+
+                            child: Text(
+                              "No Food Available",
+                              style: TextStyle(
+                                fontSize: 18,
                               ),
+                            ),
+                          ),
+                        );
+                      }
+
+                      final foods =
+                          snapshot.data!.docs;
+
+                      return isDesktop
+                          ? GridView.builder(
+                              shrinkWrap: true,
+
+                              physics:
+                                  NeverScrollableScrollPhysics(),
+
+                              itemCount:
+                                  foods.length,
+
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount:
+                                    3,
+
+                                crossAxisSpacing:
+                                    20,
+
+                                mainAxisSpacing:
+                                    20,
+
+                                childAspectRatio:
+                                    0.72,
+                              ),
+
+                              itemBuilder:
+                                  (context,
+                                      index) {
+                                return foodCard(
+                                  foods[index],
+                                );
+                              },
+                            )
+
+                          : GridView.builder(
+                              shrinkWrap: true,
+
+                              physics:
+                                  NeverScrollableScrollPhysics(),
+
+                              itemCount:
+                                  foods.length,
+
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount:
+                                    isTablet
+                                        ? 2
+                                        : 1,
+
+                                crossAxisSpacing:
+                                    20,
+
+                                mainAxisSpacing:
+                                    20,
+
+                                childAspectRatio:
+                                    isTablet
+                                        ? 0.78
+                                        : 1.9,
+                              ),
+
+                              itemBuilder:
+                                  (context,
+                                      index) {
+                                return isTablet
+                                    ? foodCard(
+                                        foods[
+                                            index],
+                                      )
+
+                                    : horizontalFoodCard(
+                                        foods[
+                                            index],
+                                      );
+                              },
                             );
-                          },
-                        ),
-
-                        const SizedBox(width: 15),
-
-                        foodCard(
-                          image: "images/salad4.png",
-                          title: "Mix Veg Salad",
-                          subtitle: "Spicy with Onion",
-                          price: "\$28",
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  /// Vertical Food List
-                  isWeb
-                      ? GridView.count(
-                          crossAxisCount: 2,
-                          shrinkWrap: true,
-                          physics:
-                              const NeverScrollableScrollPhysics(),
-                          mainAxisSpacing: 20,
-                          crossAxisSpacing: 20,
-                          childAspectRatio: 3.5,
-                          children: [
-                            verticalFoodCard(
-                              "images/salad4.png",
-                              "Mediterranean Chickpea Salad",
-                              "Honey goat cheese",
-                              "\$28",
-                            ),
-                            verticalFoodCard(
-                              "images/salad2.png",
-                              "Veggie Taco Hash",
-                              "Honey goat cheese",
-                              "\$28",
-                            ),
-                          ],
-                        )
-                      : Column(
-                          children: [
-                            verticalFoodCard(
-                              "images/salad4.png",
-                              "Mediterranean Chickpea Salad",
-                              "Honey goat cheese",
-                              "\$28",
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            verticalFoodCard(
-                              "images/salad2.png",
-                              "Veggie Taco Hash",
-                              "Honey goat cheese",
-                              "\$28",
-                            ),
-                          ],
-                        ),
+                    },
+                  )
                 ],
               ),
             ),
@@ -174,60 +294,97 @@ class _HomeState extends State<Home> {
     );
   }
 
-  /// Horizontal Food Card
-  Widget foodCard({
-    required String image,
-    required String title,
-    required String subtitle,
-    required String price,
-    VoidCallback? onTap,
-  }) {
+  /// FOOD CARD
+  Widget foodCard(DocumentSnapshot food) {
     return GestureDetector(
-      onTap: onTap,
-      child: Material(
-        elevation: 5.0,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          width: 220,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: Colors.white,
+      onTap: () {
+        Navigator.push(
+          context,
+
+          MaterialPageRoute(
+            builder: (context) => Details(
+              image: food["image"],
+              name: food["name"],
+              detail: food["detail"],
+              price: food["price"],
+            ),
           ),
+        );
+      },
+
+      child: Material(
+        elevation: 5,
+
+        borderRadius:
+            BorderRadius.circular(20),
+
+        child: Container(
+          padding: EdgeInsets.all(15),
+
+          decoration: BoxDecoration(
+            color: Colors.white,
+
+            borderRadius:
+                BorderRadius.circular(20),
+          ),
+
           child: Column(
             crossAxisAlignment:
                 CrossAxisAlignment.start,
+
             children: [
-              Center(
-                child: Image.asset(
-                  image,
-                  height: 150,
-                  width: 150,
-                  fit: BoxFit.cover,
+              /// IMAGE
+              Expanded(
+                child: ClipRRect(
+                  borderRadius:
+                      BorderRadius.circular(
+                          20),
+
+                  child: Image.network(
+                    food["image"],
+
+                    width: double.infinity,
+
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 10),
+              SizedBox(height: 15),
 
               Text(
-                title,
-                style:
-                    AppWidget.semiBoldTextFeildStyle(),
+                food["name"],
+
+                maxLines: 1,
+
+                overflow:
+                    TextOverflow.ellipsis,
+
+                style: AppWidget
+                    .semiBoldTextFeildStyle(),
               ),
 
-              const SizedBox(height: 5),
+              SizedBox(height: 5),
 
               Text(
-                subtitle,
-                style: AppWidget.LightTextFeildStyle(),
+                food["detail"],
+
+                maxLines: 2,
+
+                overflow:
+                    TextOverflow.ellipsis,
+
+                style: AppWidget
+                    .LightTextFeildStyle(),
               ),
 
-              const SizedBox(height: 5),
+              SizedBox(height: 10),
 
               Text(
-                price,
-                style:
-                    AppWidget.semiBoldTextFeildStyle(),
+                "₹ ${food["price"]}",
+
+                style: AppWidget
+                    .semiBoldTextFeildStyle(),
               ),
             ],
           ),
@@ -236,166 +393,179 @@ class _HomeState extends State<Home> {
     );
   }
 
-  /// Vertical Food Card
-  Widget verticalFoodCard(
-    String image,
-    String title,
-    String subtitle,
-    String price,
-  ) {
-    return Material(
-      elevation: 5.0,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: Colors.white,
-        ),
-        child: Row(
-          children: [
-            /// Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(15),
-              child: Image.asset(
-                image,
-                height: 120,
-                width: 120,
-                fit: BoxFit.cover,
-              ),
+  /// MOBILE CARD
+  Widget horizontalFoodCard(
+      DocumentSnapshot food) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+
+          MaterialPageRoute(
+            builder: (context) => Details(
+              image: food["image"],
+              name: food["name"],
+              detail: food["detail"],
+              price: food["price"],
             ),
+          ),
+        );
+      },
 
-            const SizedBox(width: 20),
+      child: Material(
+        elevation: 5,
 
-            /// Text
-            Expanded(
-              child: Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppWidget
-                        .semiBoldTextFeildStyle(),
-                  ),
+        borderRadius:
+            BorderRadius.circular(20),
 
-                  const SizedBox(height: 8),
+        child: Container(
+          padding: EdgeInsets.all(12),
 
-                  Text(
-                    subtitle,
-                    style:
-                        AppWidget.LightTextFeildStyle(),
-                  ),
+          decoration: BoxDecoration(
+            color: Colors.white,
 
-                  const SizedBox(height: 8),
+            borderRadius:
+                BorderRadius.circular(20),
+          ),
 
-                  Text(
-                    price,
-                    style: AppWidget
-                        .semiBoldTextFeildStyle(),
-                  ),
-                ],
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius:
+                    BorderRadius.circular(
+                        15),
+
+                child: Image.network(
+                  food["image"],
+
+                  height: 120,
+                  width: 120,
+
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
-          ],
+
+              SizedBox(width: 20),
+
+              Expanded(
+                child: Column(
+                  mainAxisAlignment:
+                      MainAxisAlignment
+                          .center,
+
+                  crossAxisAlignment:
+                      CrossAxisAlignment
+                          .start,
+
+                  children: [
+                    Text(
+                      food["name"],
+
+                      maxLines: 1,
+
+                      overflow:
+                          TextOverflow
+                              .ellipsis,
+
+                      style: AppWidget
+                          .semiBoldTextFeildStyle(),
+                    ),
+
+                    SizedBox(height: 8),
+
+                    Text(
+                      food["detail"],
+
+                      maxLines: 2,
+
+                      overflow:
+                          TextOverflow
+                              .ellipsis,
+
+                      style: AppWidget
+                          .LightTextFeildStyle(),
+                    ),
+
+                    SizedBox(height: 8),
+
+                    Text(
+                      "₹ ${food["price"]}",
+
+                      style: AppWidget
+                          .semiBoldTextFeildStyle(),
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
   }
 
-  /// Category Icons
-  Widget showItem() {
+  /// CATEGORY SECTION
+  Widget categorySection() {
     return Row(
       mainAxisAlignment:
           MainAxisAlignment.spaceBetween,
-      children: [
-        categoryItem(
-          "images/ice-cream.png",
-          icecream,
-          () {
+
+      children: categories.map((category) {
+        bool isSelected =
+            selectedCategory ==
+                category["name"];
+
+        return GestureDetector(
+          onTap: () {
             setState(() {
-              icecream = true;
-              pizza = false;
-              salad = false;
-              burger = false;
+
+              /// CLICK AGAIN -> REMOVE FILTER
+              if (selectedCategory ==
+                  category["name"]) {
+
+                selectedCategory = null;
+
+              } else {
+
+                selectedCategory =
+                    category["name"];
+              }
             });
           },
-        ),
 
-        categoryItem(
-          "images/pizza.png",
-          pizza,
-          () {
-            setState(() {
-              icecream = false;
-              pizza = true;
-              salad = false;
-              burger = false;
-            });
-          },
-        ),
+          child: Material(
+            elevation: 5,
 
-        categoryItem(
-          "images/salad.png",
-          salad,
-          () {
-            setState(() {
-              icecream = false;
-              pizza = false;
-              salad = true;
-              burger = false;
-            });
-          },
-        ),
+            borderRadius:
+                BorderRadius.circular(12),
 
-        categoryItem(
-          "images/burger.png",
-          burger,
-          () {
-            setState(() {
-              icecream = false;
-              pizza = false;
-              salad = false;
-              burger = true;
-            });
-          },
-        ),
-      ],
-    );
-  }
+            child: Container(
+              padding: EdgeInsets.all(10),
 
-  /// Category Widget
-  Widget categoryItem(
-    String image,
-    bool selected,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Material(
-        elevation: 5.0,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color:
-                selected ? Colors.black : Colors.white,
-            borderRadius: BorderRadius.circular(12),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? Colors.black
+                    : Colors.white,
+
+                borderRadius:
+                    BorderRadius.circular(
+                        12),
+              ),
+
+              child: Image.asset(
+                category["image"],
+
+                height: 40,
+                width: 40,
+
+                color: isSelected
+                    ? Colors.white
+                    : Colors.black,
+              ),
+            ),
           ),
-          child: Image.asset(
-            image,
-            height: 40,
-            width: 40,
-            fit: BoxFit.cover,
-            color:
-                selected ? Colors.white : Colors.black,
-          ),
-        ),
-      ),
+        );
+      }).toList(),
     );
   }
 }
