@@ -38,7 +38,10 @@ dependencies:
   firebase_auth: 
   cloud_firestore: 
   random_string: 
-  shared_preferences: 
+  shared_preferences:
+  image_picker: 
+  firebase_storage:  
+  cloudinary_public: 
 
 dev_dependencies:
   flutter_test:
